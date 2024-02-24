@@ -1,0 +1,47 @@
+import kotlinx.coroutines.*
+import java.net.HttpURLConnection
+import java.net.URL
+
+
+suspend fun check(url: String): Boolean = withContext(Dispatchers.IO) {
+    try {
+		val connection = URL(url).openConnection() as HttpURLConnection
+		connection.requestMethod = "HEAD"
+		connection.connectTimeout = 5000
+		connection.readTimeout = 5000
+		connection.responseCode == HttpURLConnection.HTTP_OK
+		} catch (e: Exception) {
+			false
+			}
+}
+
+
+fun main() = runBlocking {
+    val websites = listOf(
+        "https://www.google.com",
+        "https://www.facebook.com",
+		"https://www.github.com",
+		"https://www.twitter.com",
+		"https://www.instagram.com",
+    "https://www.youtube.com",
+    "https://ru.wikipedia.org/",
+		"https://habr.com/ru/articles/",
+		"https://teremok.ru/",
+		"https://www.bookvoed.ru/"
+    )
+
+    val results = websites.map { url ->
+        async {
+            check(url)
+        }
+    }
+
+    results.awaitAll().forEachIndexed { index, isAvailable ->
+        val url = websites[index]
+        if (isAvailable) {
+            println("Сайт $url доступен")
+        } else {
+            println("Сайт $url недоступен")
+        }
+    }
+}
